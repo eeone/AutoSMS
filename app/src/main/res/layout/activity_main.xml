@@ -16,7 +16,7 @@
         android:id="@+id/button"
         android:layout_centerVertical="true"
         android:layout_centerHorizontal="true"
-        android:onClick="onButtonClick" />
+        android:onClick="onSendButtonClick" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -48,23 +48,23 @@
         android:layout_height="wrap_content"
         android:id="@+id/numberPickerStart"
         android:layout_alignParentBottom="true"
-        android:layout_toStartOf="@+id/editText2" />
+        android:layout_toStartOf="@+id/button" />
 
     <NumberPicker
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/numberPickerEnd"
-        android:layout_alignTop="@+id/numberPickerStart"
-        android:layout_alignStart="@+id/button" />
+        android:layout_alignParentBottom="true"
+        android:layout_alignEnd="@+id/editText2" />
 
     <Button
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="New Button"
+        android:text="Scan SMS"
         android:id="@+id/button2"
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true"
-        android:onClick="scanSMS" />
+        android:onClick="onScanButtonClicked" />
 
     <TextView
         android:layout_width="wrap_content"
@@ -83,5 +83,23 @@
         android:text="Click to scan SMS"
         android:layout_below="@+id/button2"
         android:layout_alignEnd="@+id/button2" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Zone start:"
+        android:id="@+id/textView2"
+        android:layout_above="@+id/numberPickerStart"
+        android:layout_alignEnd="@+id/numberPickerStart" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Zone end:"
+        android:id="@+id/textView3"
+        android:layout_above="@+id/numberPickerEnd"
+        android:layout_alignEnd="@+id/numberPickerEnd" />
 
 </RelativeLayout>

@@ -1,24 +1,24 @@
 package com.ivan.autosms;
 
-import android.app.AlertDialog;
-import android.content.DialogInterface;
+import android.database.Cursor;
+import android.net.Uri;
 import android.telephony.SmsManager;
 import android.widget.EditText;
 import android.widget.NumberPicker;
+import android.widget.TextView;
 
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 
-/**
- * Created by ivan on 8/20/16.
- */
 public class Sender {
     private String licensePlate = "";
     private String phone = "";
     private String endTimeText = "";
     private int nMessages;
+    private Date validUntilDate = null;
 
     // App elements
     private MainActivity mActivity;
@@ -42,7 +42,21 @@ public class Sender {
         numberPickerEnd = (NumberPicker)m.findViewById(R.id.numberPickerEnd);
     }
 
-    private boolean checkInbox() { return false; }
+    public boolean checkAlreadySent() {
+        if (validUntilDate == null) {
+            return false;
+        }
+        else {
+            Calendar c = Calendar.getInstance(Locale.getDefault());
+            int today = c.get(Calendar.DAY_OF_MONTH);
+
+            c.setTime(validUntilDate);
+            int lastDay = c.get(Calendar.DAY_OF_MONTH);
+            int lastHour = c.get(Calendar.HOUR_OF_DAY);
+
+            return !(lastDay == today && lastHour >= numberPickerEnd.getValue());
+        }
+    }
 
     public NMsgRetVal setNumMessages() {
         Calendar c = Calendar.getInstance(Locale.getDefault());
@@ -52,16 +66,16 @@ public class Sender {
         int startOfDay = numberPickerStart.getValue();
         int endOfDay = numberPickerEnd.getValue();
 
-        if (checkInbox()) {
+        if (day == Calendar.SATURDAY || day == Calendar.SUNDAY) {
+            return NMsgRetVal.WEEKEND;
+        }
+
+        if (!checkAlreadySent()) {
             return NMsgRetVal.SENT_ALREADY;
         }
 
         if (hour > endOfDay) {
             return NMsgRetVal.PAST_FIVE;
-        }
-
-        if (day == c.SATURDAY || day == c.SUNDAY) {
-            return NMsgRetVal.WEEKEND;
         }
 
         c.setTime(new Date());
@@ -72,8 +86,8 @@ public class Sender {
         else {
             nMessages = endOfDay - hour;
             c.add(Calendar.HOUR_OF_DAY, nMessages);
-        };
-        endTimeText = new SimpleDateFormat("dd MMM yyyy HH:mm:ss").format(c.getTime());
+        }
+        endTimeText = new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.getDefault()).format(c.getTime());
 
         return NMsgRetVal.OK_TO_SEND;
     }
@@ -93,7 +107,7 @@ public class Sender {
         phone = editPhone.getText().toString();
         licensePlate = editLPlate.getText().toString();
 
-        mActivity.openSendDialog(nMessages, phone, licensePlate, endTimeText);
+        mActivity.openSendDialog(nMessages, licensePlate, endTimeText);
     }
 
     private void openErrorDialog(NMsgRetVal r) {
@@ -119,5 +133,40 @@ public class Sender {
         for (int i = 0; i < nMessages; i++) {
             SmsManager.getDefault().sendTextMessage(phone, null, licensePlate, null, null);
         }
-    };
+    }
+
+    public void scanSMS() {
+        String[] phoneNumber = new String[] { phone };
+
+        Cursor c = mActivity.getApplicationContext().getContentResolver().query(
+                Uri.parse("content://sms/inbox"),
+                new String[] { "address", "date", "body" }, "address=?", phoneNumber, "date desc");
+
+        if (c != null && c.moveToFirst()) {
+            String msgBody = c.getString(2);
+            while (!msgBody.startsWith("U Beogradu")) {
+                c.moveToNext();
+                msgBody = c.getString(2);
+            }
+
+            String msgDate = msgBody.substring(112, 135);
+
+            Calendar cal = Calendar.getInstance(Locale.getDefault());
+            cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(msgDate.substring(0, 2)));
+            cal.set(Calendar.MINUTE, Integer.parseInt(msgDate.substring(3, 5)));
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.DAY_OF_MONTH, Integer.parseInt(msgDate.substring(14, 16)));
+            cal.set(Calendar.MONTH, Integer.parseInt(msgDate.substring(17, 19)) - 1);
+            cal.set(Calendar.YEAR, 2000 + Integer.parseInt(msgDate.substring(20, 22)));
+
+            validUntilDate = cal.getTime();
+
+
+            DateFormat df = new SimpleDateFormat("HH:mm dd.MM.yyyy", Locale.getDefault());
+            TextView validUntilText = (TextView) mActivity.findViewById(R.id.validUntilDate);
+            validUntilText.setText(df.format(validUntilDate));
+
+            c.close();
+        }
+    }
 }
