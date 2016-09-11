@@ -136,6 +136,7 @@ public class Sender {
     }
 
     public void scanSMS() {
+        phone = editPhone.getText().toString();
         String[] phoneNumber = new String[] { phone };
 
         Cursor c = mActivity.getApplicationContext().getContentResolver().query(
